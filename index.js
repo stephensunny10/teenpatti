@@ -10,7 +10,7 @@ var shortId = require('shortid');
 var bodyParser = require('body-parser');
 let referralCodeGenerator = require('referral-code-generator')
 var MongoClient = require('mongodb').MongoClient;
-var uri = "mongodb+srv://ludofirst:kargan82@ludo.gyzkr.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+var uri = "mongodb+srv://john:9UmSVdNkiT4nJRzB@cluster0.vdojp.mongodb.net/TeenPatti?retryWrites=true&w=majority";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
