@@ -10,7 +10,7 @@ var shortId = require('shortid');
 var bodyParser = require('body-parser');
 let referralCodeGenerator = require('referral-code-generator')
 var MongoClient = require('mongodb').MongoClient;
-var uri = "mongodb+srv://john:9UmSVdNkiT4nJRzB@cluster0.vdojp.mongodb.net/TeenPatti?retryWrites=true&w=majority";
+var uri = "mongodb+srv://john:9UmSVdNkiT4nJRzB@cluster0.vdojp.mongodb.net/teenpatti?retryWrites=true&w=majority";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -1359,7 +1359,11 @@ function Updated_Cash(lSocket, email, cash) {
 				if (result.length != 0) {
 					var chValue = parseInt(result[0].cash, 10);
 					chValue += parseInt(cash, 10);
-					Updated_Cash2(lSocket, email, chValue);
+
+					// deduct 2 % of cash
+					var commission = (2/100) * chValue;
+					var netCash = chValue - commission;
+					Updated_Cash2(lSocket, email, netCash);
 				}
 			}
 			//console.log(result);
@@ -1564,6 +1568,7 @@ function GetCommission(lSocket) {
 		});
 	});
 }
+
 listOfUsers = function () {
 	for (var i = 0; i < clients.length; i++) {
 		console.log("Now " + clients[i].name + " ONLINE");
