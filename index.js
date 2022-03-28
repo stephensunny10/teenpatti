@@ -5,13 +5,18 @@ var cards = require("./cards");
 var bcrypt = require('bcryptjs');
 var app = express();
 var server = require('http').createServer(app);
-var io = require('socket.io').listen(server);
+//var io = require('socket.io').listen(server);
+var io = require('socket.io')({
+    transports: ['websocket'],
+});
+
+io.attach(4567);
 var shortId = require('shortid');
 var bodyParser = require('body-parser');
 let referralCodeGenerator = require('referral-code-generator')
 var MongoClient = require('mongodb').MongoClient;
+//var uri = "mongodb://142.93.211.114:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false";
 var uri = "mongodb+srv://john:9UmSVdNkiT4nJRzB@cluster0.vdojp.mongodb.net/teenpatti?retryWrites=true&w=majority";
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: true
@@ -33,8 +38,8 @@ const pool = mysql.createPool({
 });
 
 var clients = [];
-var currVersion=5;
-var apkUrl="https://drive.google.com/file/d/164_IrSfwkNe6xqX318MHDMJ6u9qVZZOj/view?usp=sharing";
+var currVersion = 5;
+var apkUrl = "https://drive.google.com/file/d/164_IrSfwkNe6xqX318MHDMJ6u9qVZZOj/view?usp=sharing";
 
 var totalCards2 = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", '14', "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25",
 	"26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51"];
@@ -460,6 +465,7 @@ function showFunc(lSocket2) {
 		seenCount = 0;
 	return seenCount;
 }
+
 function nextDealerValue(socRoom, lSocket2) {
 	var localCPlay = socRoom.dealerValue;
 	var eChe = true;
@@ -509,6 +515,7 @@ function nextCurrPlayer(socRoom, lSocket2) {
 		}
 	}
 }
+
 function checkPacked(chPack) {
 	var pCount = 0;
 	var cCount = chPack.adapter.rooms[chPack.room];
@@ -608,7 +615,7 @@ io.on('connection', function (socket) {
 
 
 	console.log("server connected");
-	socket.emit("Server_Started", {currVersion:currVersion,apkUrl:apkUrl});
+	socket.emit("Server_Started", { currVersion: currVersion, apkUrl: apkUrl });
 	socket.on("Server_Started", function () {
 		//socket.emit("Server_Started");
 	});
@@ -1121,7 +1128,7 @@ io.on('connection', function (socket) {
 		socket.broadcast.in(socket.room).emit("CHAT", { seat: (socket.seat - 1), msg: data.msg });
 	});
 	socket.on("UserRegister", function (data) {
-
+		console.log("REGISTER REQ");
 		Register(data, socket);
 	});
 
@@ -1148,9 +1155,9 @@ io.on('connection', function (socket) {
 	socket.on("JoinPrivateRoom", function (data) {
 		JoinRoom(socket, data);
 	});
-	
+
 	socket.on("Get_Chips", function (data) {
-		Get_Chips( data,socket);
+		Get_Chips(data, socket);
 	});
 
 
@@ -1233,7 +1240,7 @@ function Register2(data, lSocket) {
 			email: data.email,
 			password: pWord,
 			mobile: data.mobile,
-			chips: 10000,
+			chips: 100,
 			cash: 0,
 			appId: "",
 			lastname: "",
@@ -1293,7 +1300,7 @@ function VerifyUser(data, lSocket) {
 						});
 					} else {
 						lSocket.emit("VerifyUser", { email: data.email, status: "no" });
-					} 
+					}
 				} else {
 					lSocket.emit("VerifyUser", { email: data.email, status: "no" });
 				}
@@ -1303,7 +1310,7 @@ function VerifyUser(data, lSocket) {
 		});
 	});
 }
-function Get_Chips(data,lSocket) {
+function Get_Chips(data, lSocket) {
 	MongoClient.connect(uri, function (err, db) {
 		var dbo = db.db("teenpatti");
 		var query = { email: data.email };
@@ -1313,7 +1320,7 @@ function Get_Chips(data,lSocket) {
 				if (result.length != 0) {
 					var chValue = parseInt(result[0].chips, 10);
 					lSocket.emit("Get_Chips", { total_chips: chValue });
-					
+
 				}
 			}
 			//console.log(result);
@@ -1359,11 +1366,7 @@ function Updated_Cash(lSocket, email, cash) {
 				if (result.length != 0) {
 					var chValue = parseInt(result[0].cash, 10);
 					chValue += parseInt(cash, 10);
-
-					// deduct 2 % of cash
-					var commission = (2/100) * chValue;
-					var netCash = chValue - commission;
-					Updated_Cash2(lSocket, email, netCash);
+					Updated_Cash2(lSocket, email, chValue);
 				}
 			}
 			//console.log(result);
@@ -1560,15 +1563,14 @@ function JoinRoom(lSocket, data) {
 		}
 	});
 }
-function GetCommission(lSocket) {
-	pool.query("SELECT * FROM settings", function (err, result, fields) {
-		lSocket.emit("Settings", {
-			commission: result[0].conversion_rate, bonusRate: result[0].currency, private_price: result[0].question_time,
-			upgrade_url: result[0].completed_option
-		});
-	});
-}
-
+// function GetCommission(lSocket) {
+// 	pool.query("SELECT * FROM settings", function (err, result, fields) {
+// 		lSocket.emit("Settings", {
+// 			commission: result[0].conversion_rate, bonusRate: result[0].currency, private_price: result[0].question_time,
+// 			upgrade_url: result[0].completed_option
+// 		});
+// 	});
+// }
 listOfUsers = function () {
 	for (var i = 0; i < clients.length; i++) {
 		console.log("Now " + clients[i].name + " ONLINE");
